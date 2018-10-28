@@ -28,7 +28,7 @@ namespace WebApplication1
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
+                c.SwaggerDoc("v1", new Info { Title = "Todo API", Version = "v1" });
             });
         }
 
@@ -44,7 +44,7 @@ namespace WebApplication1
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Todo API");
             });
         }
     }
