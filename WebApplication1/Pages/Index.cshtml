@@ -1,0 +1,28 @@
+﻿@page
+@using WebApplication1.Controllers;
+@model WebApplication1.Pages.IndexModel
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h2>Index</h2>
+<table>
+    <tr>
+        <th>Api Key</th>
+        <th>Tasks</th>
+    </tr>
+    @foreach (var item in TodoController.TodoItems)
+    {
+        <tr>
+            <td>@item.Key</td>
+            <td>
+                <ul>
+                    @foreach (var task in item.Value)
+                    {
+                        <li>@task.Task (@task.Id)</li>
+                    }
+                </ul>
+            </td>
+        </tr>
+    }
+</table>
