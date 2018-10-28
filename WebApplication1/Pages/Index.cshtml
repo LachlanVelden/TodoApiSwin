@@ -4,26 +4,34 @@
 @{
     ViewData["Title"] = "Index";
 }
-
-<h2>TodoApiSwin</h2>
-<p>Check out the api docs here: <a href="/swagger">/swagger</a></p>
-<table>
-    <tr>
-        <th>Api Key</th>
-        <th>Tasks</th>
-    </tr>
-    @foreach (var item in TodoController.TodoItems)
-    {
+<html>
+<head>
+    <title>TodoApiSwin</title>
+    <meta http-equiv="refresh" content="5;" />
+</head>
+<body>
+    <h2>TodoApiSwin</h2>
+    <p>Check out the api docs here: <a href="/swagger">/swagger</a></p>
+    <table>
         <tr>
-            <td>@item.Key</td>
-            <td>
-                <ul>
-                    @foreach (var task in item.Value)
-                    {
-                        <li>@task.Task (@task.Id)</li>
-                    }
-                </ul>
-            </td>
+            <th>Api Key</th>
+            <th>Tasks</th>
         </tr>
-    }
-</table>
+        @foreach (var item in TodoController.TodoItems)
+        {
+            <tr>
+                <td>@item.Key</td>
+                <td>
+                    <ul>
+                        @foreach (var task in item.Value)
+                        {
+                            <li>@task.Task (@task.Id)</li>
+                        }
+                    </ul>
+                </td>
+            </tr>
+        }
+    </table>
+</body>
+</html>
+

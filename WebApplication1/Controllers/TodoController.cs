@@ -13,6 +13,14 @@ namespace WebApplication1.Controllers
     public class TodoController : ControllerBase
     {
         public static Dictionary<string, List<TodoItem>> TodoItems { get; set; } = new Dictionary<string, List<TodoItem>>();
+
+        [HttpGet("keys")]
+        [ProducesResponseType(typeof(List<TodoItem>), 200)]
+        public IActionResult GetKeys()
+        {
+            return Ok(TodoItems.Select(x=> x.Key).ToList());
+        }
+
         // GET api/values
         [HttpGet]
         [ProducesResponseType(typeof(Dictionary<string, List<TodoItem>>), 200)]
