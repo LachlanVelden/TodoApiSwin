@@ -7,12 +7,17 @@
 <html>
 <head>
     <title>TodoApiSwin</title>
-    <meta http-equiv="refresh" content="5;" />
+    <meta http-equiv="refresh" content="2;" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
 </head>
 <body>
-    <h2>TodoApiSwin</h2>
-    <p>Check out the api docs here: <a href="/swagger">/swagger</a></p>
-    <table>
+    <div class="jumbotron">
+        <h1>TodoApiSwin</h1>
+        <p>Check out the api docs here: <a href="/swagger">/swagger</a></p>
+    </div>
+
+    <table class="table table-striped">
         <tr>
             <th>Api Key</th>
             <th>Tasks</th>
@@ -21,13 +26,16 @@
         {
             <tr>
                 <td>@item.Key</td>
-                <td>
-                    <ul>
+                <td style="padding: 0;">
+                    <table class="table table-striped" style="margin: 0;">
                         @foreach (var task in item.Value)
                         {
-                            <li>@task.Task (@task.Id)</li>
+                            <tr>
+                                <td>@task.Id</td>
+                                <td>@task.Task</td>
+                            </tr>
                         }
-                    </ul>
+                    </table>
                 </td>
             </tr>
         }
