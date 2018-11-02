@@ -18,81 +18,93 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(List<TodoItem>), 200)]
         public IActionResult GetKeys()
         {
-            return Ok(TodoItems.Select(x=> x.Key).ToList());
+            return Ok(TodoItems.Select(x => x.Key).ToList());
         }
 
         // GET api/values
         [HttpGet]
-        [ProducesResponseType(typeof(Dictionary<string, List<TodoItem>>), 200)]
+        [ProducesResponseType(typeof(List<TodoItem>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
         public IActionResult Get([FromQuery] string apiKey)
         {
-            if(string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
-            if(!TodoItems.ContainsKey(apiKey)) TodoItems[apiKey] = new List<TodoItem>
-            {
-                new TodoItem(Guid.NewGuid(), "Complete the task lochie has given you...")
-            };
-            return Ok(TodoItems[apiKey]);
+            // Validation
+            if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
+
+            return Ok(GetTodoItem(apiKey));
         }
 
         // GET api/values/5
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(TodoItem), 200)]
+        [ProducesResponseType(typeof(TodoItem), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
         public IActionResult Get(Guid id, [FromQuery] string apiKey)
         {
+            // Validation
+            if (apiKey.Length > 128) return BadRequest();
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
-            if (!TodoItems.ContainsKey(apiKey)) TodoItems[apiKey] = new List<TodoItem>
-            {
-                new TodoItem(Guid.NewGuid(), "Complete the task lochie has given you...")
-            };
-            var item = TodoItems[apiKey].FirstOrDefault(x => x.Id == id);
-            if(item == null) return NotFound();
+
+            var item = GetTodoItem(apiKey).FirstOrDefault(x => x.Id == id);
+            if (item == null) return NotFound();
             return Ok(item);
         }
 
         // POST api/values
         [HttpPost]
-        [ProducesResponseType(typeof(TodoItem), 200)]
+        [ProducesResponseType(typeof(TodoItem), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
         public IActionResult Post([FromQuery] string apiKey, [FromBody] TodoItem task)
         {
+            // Validation
+            if (apiKey.Length > 128 || task.Task.Length > 256) return BadRequest();
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
-            if (!TodoItems.ContainsKey(apiKey)) TodoItems[apiKey] = new List<TodoItem>
-            {
-                new TodoItem(Guid.NewGuid(), "Complete the task lochie has given you...")
-            };
+            if (GetTodoItem(apiKey).Count > 64) return BadRequest();
+
             var item = new TodoItem(Guid.NewGuid(), task.Task);
-            TodoItems[apiKey].Add(item);
+            GetTodoItem(apiKey).Add(item);
             return Ok(item);
         }
 
         // PUT api/values/5
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(TodoItem), 200)]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.NotFound)]
         public IActionResult Put(Guid id, [FromQuery] string apiKey, [FromBody] TodoItem task)
         {
+            // Validation
+            if (apiKey.Length > 128 || task.Task.Length > 256) return BadRequest();
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
-            if (!TodoItems.ContainsKey(apiKey)) TodoItems[apiKey] = new List<TodoItem>
-            {
-                new TodoItem(Guid.NewGuid(), "Complete the task lochie has given you...")
-            };
-            var item = TodoItems[apiKey].FirstOrDefault(x=> x.Id == id);
-            if(id == null) return NotFound();
+            if (id == default(Guid)) return NotFound();
+
+            var item = GetTodoItem(apiKey).FirstOrDefault(x => x.Id == id);
+            if (item == null) return NotFound();
             item.Task = task.Task;
             return Ok(item);
         }
 
         // DELETE api/values/5
         [HttpDelete("{id}")]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.NotFound)]
         public IActionResult Delete(Guid id, [FromQuery] string apiKey)
         {
+            // Validation
+            if (apiKey.Length > 128) return BadRequest();
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
-            if (!TodoItems.ContainsKey(apiKey)) TodoItems[apiKey] = new List<TodoItem>
-            {
-                new TodoItem(Guid.NewGuid(), "Complete the task lochie has given you...")
-            };
-            var item = TodoItems[apiKey].RemoveAll(x => x.Id == id);
+
+
+
+            var item = GetTodoItem(apiKey).RemoveAll(x => x.Id == id);
             if (item <= 0) return NotFound();
-            
+
             return Ok();
+        }
+
+        private List<TodoItem> GetTodoItem(string key)
+        {
+            if (!TodoItems.ContainsKey(key)) TodoItems[key] = new List<TodoItem>();
+            return TodoItems[key];
         }
     }
 }
