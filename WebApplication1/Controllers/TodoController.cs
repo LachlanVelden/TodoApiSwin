@@ -65,8 +65,11 @@ namespace WebApplication1.Controllers
         public IActionResult Get(Guid id, [FromQuery] string apiKey)
         {
             // Validation
-            if (apiKey.Length > 128) return BadRequest();
+            // - Null Checks
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
+            // - Length Checks
+            if (apiKey.Length > 128) return BadRequest();
+            
 
             var item = GetTodoItem(apiKey).FirstOrDefault(x => x.Id == id);
             if (item == null) return NotFound();
@@ -87,11 +90,17 @@ namespace WebApplication1.Controllers
         public IActionResult Post([FromQuery] string apiKey, [FromBody] TodoItem task)
         {
             // Validation
-            if (apiKey.Length > 128 || task.Task.Length > 256) return BadRequest();
+            // - Null Checks
+            if (!string.IsNullOrWhiteSpace(task.Task)) return BadRequest();
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
+
+            // - Length Checks
+            if (task.Task.Length > 256) return BadRequest();
+            if (apiKey.Length > 128) return BadRequest();
             if (GetTodoItem(apiKey).Count > 64) return BadRequest();
 
-            var item = new TodoItem(Guid.NewGuid(), task.Task);
+            // Create the TodoItem
+            var item = new TodoItem(Guid.NewGuid(), task.Task) { Completed = task.Completed };
             GetTodoItem(apiKey).Add(item);
             return Ok(item);
         }
@@ -113,12 +122,25 @@ namespace WebApplication1.Controllers
         public IActionResult Put(Guid id, [FromQuery] string apiKey, [FromBody] TodoItem task)
         {
             // Validation
-            if (apiKey.Length > 128 || task.Task.Length > 256) return BadRequest();
+            // - Null Checks
+            if(!string.IsNullOrWhiteSpace(task.Task)) return BadRequest();
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
             if (id == default(Guid)) return NotFound();
+
+            // - Length Checks
+            if (task.Task.Length > 256) return BadRequest();
+            if (apiKey.Length > 128) return BadRequest();
+            
+            // Find the TodoItem
             var item = GetTodoItem(apiKey).FirstOrDefault(x => x.Id == id);
             if (item == null) return NotFound();
-            item.Task = task.Task;
+
+            // Update the TodoItem
+            if(!string.IsNullOrWhiteSpace(task.Task))
+                item.Task = task.Task;
+            else
+                item.Completed = task.Completed;
+
             return Ok(item);
         }
 
@@ -138,8 +160,11 @@ namespace WebApplication1.Controllers
         public IActionResult Delete(Guid id, [FromQuery] string apiKey)
         {
             // Validation
-            if (apiKey.Length > 128) return BadRequest();
+            // Validation
+            // - Null Checks
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
+            // - Length Checks
+            if (apiKey.Length > 128) return BadRequest();
 
 
 

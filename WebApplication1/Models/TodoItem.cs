@@ -11,7 +11,7 @@ namespace WebApplication1.Models
         /// <summary>
         /// The description of this Task.
         /// </summary>
-        [MaxLength(128)]
+        [MaxLength(256)]
         public string Task { get; set; }
         /// <summary>
         /// The Id of this TodoItem used to uniquely identify this TodoItem from others.
