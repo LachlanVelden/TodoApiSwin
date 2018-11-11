@@ -149,7 +149,7 @@ namespace WebApplication1.Controllers
         /// <param name="id">The UUID / GUID of the TodoItem</param>
         /// <param name="apiKey">The API key that hosts the TodoItem</param>
         /// <returns>Blank</returns>
-        /// <response code="200">The TodoItem was delete successfully</response>
+        /// <response code="200">The TodoItem was deleted successfully</response>
         /// <response code="400">The request was invalid</response>
         /// <response code="404">The TodoItem was not found</response>
         [HttpDelete("{id}")]
