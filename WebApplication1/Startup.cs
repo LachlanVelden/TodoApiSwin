@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -13,16 +15,37 @@ using Swashbuckle.AspNetCore.Swagger;
 
 namespace WebApplication1
 {
+    /// <summary>
+    /// An object defining 2 methods to be called at the initial start of the server
+    /// </summary>
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        /// <summary>
+        /// Create an instance of this startup class, and get any required services from dependency injection
+        /// </summary>
+        /// <param name="configuration">The servers configuration model collected from dependency injection</param>
+        /// <param name="environment">The hosting environment's configuration model collected from dependency injection</param>
+        public Startup(IConfiguration configuration, IHostingEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
+        /// <summary>
+        /// This servers configuration model
+        /// </summary>
+        /// <remarks>This will include appsettings.{configuration}.json and environment variables</remarks>
         public IConfiguration Configuration { get; }
+        /// <summary>
+        /// This hosting environment's configuration model
+        /// </summary>
+        public IHostingEnvironment Environment { get; set; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
+        /// <summary>
+        /// Configure the server's services.
+        /// </summary>
+        /// <remarks>This method gets called by the runtime.</remarks>
+        /// <param name="services">The default service collection of this web service </param>
         public void ConfigureServices(IServiceCollection services)
         {
             // Define the version of MVC that we wish to use (this should match the current .net core version)
@@ -33,6 +56,14 @@ namespace WebApplication1
             {
                 // Define an API with v1
                 c.SwaggerDoc("v1", new Info { Title = "Todo API", Version = "v1" });
+                // Tell Swagger to use the compiler generated XML documentation
+                // {0} - The name of the current namespace / the exported XML file name
+                var xmlDocsPath = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    string.Format(@"{0}.xml",
+                    Assembly.GetExecutingAssembly().GetName().Name)
+                );
+                c.IncludeXmlComments(xmlDocsPath);
             });
 
             // Add the CORS services so that we can access this API from external hosts
@@ -49,10 +80,15 @@ namespace WebApplication1
             });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+
+        /// <summary>
+        /// Configure the HTTP Request pipeline.
+        /// </summary>
+        /// <remarks>This method gets called by the runtime after all services have been added.</remarks>
+        /// <param name="app">The IApplicationBuilder to configure the application's request pipeline </param>
+        public void Configure(IApplicationBuilder app)
         {
-            if (env.IsDevelopment())
+            if (Environment.IsDevelopment())
             {
                 // The server is in development mode, we want to present the error messages towards the developer. Hiding them would be stupid
                 app.UseDeveloperExceptionPage();
@@ -68,6 +104,7 @@ namespace WebApplication1
             // Use the Swagger UI - This will add the Swagger UI resources to /swagger
             app.UseSwaggerUI(c =>
             {
+
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Todo API");
             });
         }
