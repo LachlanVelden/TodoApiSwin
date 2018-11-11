@@ -56,7 +56,9 @@ namespace WebApplication1
             // Add the Entity Framework services
             services.AddDbContext<ApplicationDatabaseContext>(options =>
             {
-                options.UseSqlServer(Configuration["ConnectionString"]);
+                // On an Azure App service:  This will use values from App -> Application Settings -> Connection strings
+                // In Development: This will use a local database file (as seen in appsettings.Development.json)
+                options.UseSqlServer(Configuration["ConnectionStrings:defaultConnection"]);
             });
 
             // Add The Swagger Documentation Generator services
@@ -115,6 +117,17 @@ namespace WebApplication1
 
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Todo API");
             });
+
+            // Automatically migrate the database (and create it if it does not already exist)
+            InitializeDatabase(app);
+        }
+
+        private void InitializeDatabase(IApplicationBuilder app)
+        {
+            using (var scope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                scope.ServiceProvider.GetRequiredService<ApplicationDatabaseContext>().Database.Migrate();
+            }
         }
     }
 }
