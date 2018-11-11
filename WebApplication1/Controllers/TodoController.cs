@@ -55,9 +55,9 @@ namespace WebApplication1.Controllers
         {
             // Validation
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
-            if (await DatabaseContext.TodoItems.AllAsync(x => x.Key != apiKey)) return NotFound();
-
-            return Ok((await DatabaseContext.TodoItems.Include(x=> x.Tasks).FirstOrDefaultAsync(x => x.Key == apiKey)).Tasks);
+            var items = await DatabaseContext.TodoItems.Include(x => x.Tasks).FirstOrDefaultAsync(x => x.Key == apiKey);
+            if (items == null) return NotFound();
+            return Ok(items.Tasks);
         }
 
         /// <summary>
