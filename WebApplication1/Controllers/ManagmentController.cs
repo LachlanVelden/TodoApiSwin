@@ -58,15 +58,13 @@ namespace WebApplication1.Controllers
         {
             if (managementKey != config["MANAGEMENT_KEY"])
                 return Unauthorized();
-            var items = await dbContext.TodoItems.Where(x => x.Key == apiKey).Include(x => x.Tasks).ToListAsync();
-            if (items == null || items.Count <= 0) return NotFound();
-            foreach (var todoItemKeyContainer in items)
-            {
-                dbContext.TodoItem.RemoveRange(todoItemKeyContainer.Tasks);
-                await dbContext.SaveChangesAsync();
-                dbContext.TodoItems.RemoveRange(items);
-                await dbContext.SaveChangesAsync();
-            }
+            var items = await dbContext.TodoItems.Where(x => x.Key == apiKey).Include(x => x.Tasks).FirstOrDefaultAsync();
+            if (items == null) return NotFound();
+
+            dbContext.TodoItem.RemoveRange(items.Tasks);
+            await dbContext.SaveChangesAsync();
+            dbContext.TodoItems.Remove(items);
+            await dbContext.SaveChangesAsync();
 
             return Ok();
         }
