@@ -34,6 +34,19 @@ namespace WebApplication1
                 // Define an API with v1
                 c.SwaggerDoc("v1", new Info { Title = "Todo API", Version = "v1" });
             });
+
+            // Add the CORS services so that we can access this API from external hosts
+            // * Google CORS for more info *
+            services.AddCors(builder =>
+            {
+                // Add a default policy
+                builder.AddPolicy("default", options =>
+                {
+                    options.AllowAnyHeader();
+                    options.AllowAnyMethod();
+                    options.AllowAnyOrigin();
+                });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -44,6 +57,9 @@ namespace WebApplication1
                 // The server is in development mode, we want to present the error messages towards the developer. Hiding them would be stupid
                 app.UseDeveloperExceptionPage();
             }
+
+            // Use the 'default' CORS policy 
+            app.UseCors("default");
 
             // Use the MVC stack - This will enable routing and view rendering
             app.UseMvc();
