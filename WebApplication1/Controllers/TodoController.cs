@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
 
 namespace WebApplication1.Controllers
@@ -16,10 +17,11 @@ namespace WebApplication1.Controllers
     [ApiController]
     public class TodoController : ControllerBase
     {
-        /// <summary>
-        /// The in memory store of all TodoItems
-        /// </summary>
-        public static Dictionary<string, List<TodoItem>> TodoItems { get; set; } = new Dictionary<string, List<TodoItem>>();
+        private ApplicationDatabaseContext DatabaseContext { get; }
+        public TodoController(ApplicationDatabaseContext dbContext)
+        {
+            DatabaseContext = dbContext;
+        }
 
 
         /// <summary>
@@ -28,9 +30,9 @@ namespace WebApplication1.Controllers
         /// <returns>An array of all API keys in string format</returns>
         [HttpGet("keys")]
         [ProducesResponseType(typeof(List<TodoItem>), 200)]
-        public IActionResult GetKeys()
+        public async Task<IActionResult> GetKeys()
         {
-            return Ok(TodoItems.Select(x => x.Key).ToList());
+            return Ok(await DatabaseContext.TodoItems.Select(x => x.Key).ToListAsync());
         }
 
         /// <summary>
@@ -40,15 +42,18 @@ namespace WebApplication1.Controllers
         /// <returns>An array of TodoItems containing the task and id</returns>
         /// <response code="200">The TodoItems were found and returned</response>
         /// <response code="400">The request was invalid</response>
+        /// <response code="404">The API Key was not found</response>
         [HttpGet]
         [ProducesResponseType(typeof(List<TodoItem>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
-        public IActionResult Get([FromQuery] string apiKey)
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.NotFound)]
+        public async Task<IActionResult> Get([FromQuery] string apiKey)
         {
             // Validation
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
+            if (await DatabaseContext.TodoItems.AllAsync(x => x.Key != apiKey)) return NotFound();
 
-            return Ok(GetTodoItem(apiKey));
+            return Ok((await DatabaseContext.TodoItems.Include(x=> x.Tasks).FirstOrDefaultAsync(x => x.Key == apiKey)).Tasks);
         }
 
         /// <summary>
@@ -59,19 +64,23 @@ namespace WebApplication1.Controllers
         /// <returns>An individual TodoItem containing the task and id</returns>
         /// <response code="200">The TodoItem was found and returned</response>
         /// <response code="400">The request was invalid</response>
+        /// <response code="404">The TodoItem or API Key was not found</response>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(TodoItem), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
-        public IActionResult Get(Guid id, [FromQuery] string apiKey)
+        [ProducesResponseType(typeof(void), (int)HttpStatusCode.NotFound)]
+        public async Task<IActionResult> Get(Guid id, [FromQuery] string apiKey)
         {
             // Validation
             // - Null Checks
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
+            if (id == Guid.Empty) return BadRequest();
             // - Length Checks
             if (apiKey.Length > 128) return BadRequest();
-            
 
-            var item = GetTodoItem(apiKey).FirstOrDefault(x => x.Id == id);
+            var items = await DatabaseContext.TodoItems.Include(x => x.Tasks).FirstOrDefaultAsync(x => x.Key == apiKey);
+            if (items?.Tasks == null) return NotFound();
+            var item = items.Tasks.FirstOrDefault(x => x.Id == id);
             if (item == null) return NotFound();
             return Ok(item);
         }
@@ -87,7 +96,7 @@ namespace WebApplication1.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(TodoItem), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
-        public IActionResult Post([FromQuery] string apiKey, [FromBody] TodoItem task)
+        public async Task<IActionResult> Post([FromQuery] string apiKey, [FromBody] TodoItem task)
         {
             // Validation
             // - Null Checks
@@ -97,17 +106,31 @@ namespace WebApplication1.Controllers
             // - Length Checks
             if (task.Task.Length > 256) return BadRequest();
             if (apiKey.Length > 128) return BadRequest();
-            if (GetTodoItem(apiKey).Count > 64) return BadRequest();
+
+            var items = await DatabaseContext.TodoItems.FirstOrDefaultAsync(x => x.Key == apiKey);
+            if (items == null)
+            {
+                items = new TodoItemKeyContainer(apiKey);
+                DatabaseContext.TodoItems.Add(items);
+            }
+            else if (await DatabaseContext.TodoItems.Where(x => x.Key == apiKey).Select(x => x.Tasks).CountAsync() >= 64)
+                return BadRequest();
+
+            if(items.Tasks == null) items.Tasks = new List<TodoItem>();
 
             // Create the TodoItem
             var item = new TodoItem(Guid.NewGuid(), task.Task) { Completed = task.Completed };
-            GetTodoItem(apiKey).Add(item);
+            items.Tasks.Add(item);
+
+            await DatabaseContext.SaveChangesAsync();
+
             return Ok(item);
         }
 
         /// <summary>
         /// Updates a TodoItem at the provided API key and TodoItems ID
         /// </summary>
+        /// <remarks>Can only update either the task content or the completed state at once time</remarks>
         /// <param name="id">The UUID / GUID of the TodoItem</param>
         /// <param name="apiKey">The API key that hosts this TodoItem</param>
         /// <param name="task">The Updated TodoItem model</param>
@@ -119,7 +142,7 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(TodoItem), 200)]
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.NotFound)]
-        public IActionResult Put(Guid id, [FromQuery] string apiKey, [FromBody] TodoItem task)
+        public async Task<IActionResult> Put(Guid id, [FromQuery] string apiKey, [FromBody] TodoItem task)
         {
             // Validation
             // - Null Checks
@@ -129,16 +152,21 @@ namespace WebApplication1.Controllers
             // - Length Checks
             if (!string.IsNullOrWhiteSpace(task.Task) && task.Task.Length > 256) return BadRequest();
             if (apiKey.Length > 128) return BadRequest();
-            
+
+            var items = await DatabaseContext.TodoItems.Include(x => x.Tasks).FirstOrDefaultAsync(x => x.Key == apiKey);
+            if (items == null) return NotFound();
             // Find the TodoItem
-            var item = GetTodoItem(apiKey).FirstOrDefault(x => x.Id == id);
+
+            var item = items.Tasks.FirstOrDefault(x => x.Id == id);
             if (item == null) return NotFound();
 
             // Update the TodoItem
-            if(!string.IsNullOrWhiteSpace(task.Task))
+            if (!string.IsNullOrWhiteSpace(task.Task))
                 item.Task = task.Task;
             else
                 item.Completed = task.Completed;
+
+            await DatabaseContext.SaveChangesAsync();
 
             return Ok(item);
         }
@@ -156,7 +184,7 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.NotFound)]
-        public IActionResult Delete(Guid id, [FromQuery] string apiKey)
+        public async Task<IActionResult> Delete(Guid id, [FromQuery] string apiKey)
         {
             // Validation
             // Validation
@@ -165,18 +193,14 @@ namespace WebApplication1.Controllers
             // - Length Checks
             if (apiKey.Length > 128) return BadRequest();
 
-
-
-            var item = GetTodoItem(apiKey).RemoveAll(x => x.Id == id);
+            var items = await DatabaseContext.TodoItems.Include(x=> x.Tasks).FirstOrDefaultAsync(x => x.Key == apiKey);
+            if (items == null) return NotFound();
+            var item = items.Tasks.RemoveAll(x => x.Id == id);
             if (item <= 0) return NotFound();
 
-            return Ok();
-        }
+            await DatabaseContext.SaveChangesAsync();
 
-        private List<TodoItem> GetTodoItem(string key)
-        {
-            if (!TodoItems.ContainsKey(key)) TodoItems[key] = new List<TodoItem>();
-            return TodoItems[key];
+            return Ok();
         }
     }
 }

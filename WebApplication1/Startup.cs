@@ -7,11 +7,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
+using WebApplication1.Models;
 
 namespace WebApplication1
 {
@@ -51,7 +53,13 @@ namespace WebApplication1
             // Define the version of MVC that we wish to use (this should match the current .net core version)
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            // Add The Swagger Documentation Generator Service
+            // Add the Entity Framework services
+            services.AddDbContext<ApplicationDatabaseContext>(options =>
+            {
+                options.UseSqlServer(Configuration["ConnectionString"]);
+            });
+
+            // Add The Swagger Documentation Generator services
             services.AddSwaggerGen(c =>
             {
                 // Define an API with v1
