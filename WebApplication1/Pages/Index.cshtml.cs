@@ -8,8 +8,14 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Pages
 {
+    /// <summary>
+    /// IndexPage ViewModel
+    /// </summary>
     public class IndexModel : PageModel
     {
+        /// <summary>
+        /// On Get
+        /// </summary>
         public void OnGet()
         {
         }

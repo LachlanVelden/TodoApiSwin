@@ -1,8 +1,10 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 namespace WebApplication1.Migrations
 {
+
     public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

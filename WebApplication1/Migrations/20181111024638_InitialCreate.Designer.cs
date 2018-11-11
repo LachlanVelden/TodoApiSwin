@@ -7,15 +7,16 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApplication1.Models;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(ApplicationDatabaseContext))]
     [Migration("20181111024638_InitialCreate")]
     partial class InitialCreate
     {
+
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
-#pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "2.2.0-preview3-35497")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
@@ -56,7 +57,6 @@ namespace WebApplication1.Migrations
                         .WithMany("Tasks")
                         .HasForeignKey("TodoItemKeyContainerKey");
                 });
-#pragma warning restore 612, 618
         }
     }
 }

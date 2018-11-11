@@ -18,6 +18,10 @@ namespace WebApplication1.Controllers
     public class TodoController : ControllerBase
     {
         private ApplicationDatabaseContext DatabaseContext { get; }
+        /// <summary>
+        /// Create an instance of the TodoApi Controller and request the ApplicationDatabaseContext with dependency injection
+        /// </summary>
+        /// <param name="dbContext"></param>
         public TodoController(ApplicationDatabaseContext dbContext)
         {
             DatabaseContext = dbContext;
