@@ -30,6 +30,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.Unauthorized)]
         public async Task<IActionResult> ClearAll([FromServices] IConfiguration config, [FromServices] ApplicationDatabaseContext dbContext, [FromQuery] string managementKey)
         {
+            // On Azure App Service: this will use the key from App Service -> Application Settings -> Application settings
+            // In Development: this will use the key from appsettings.development.json
             if (managementKey != config["MANAGEMENT_KEY"])
                 return Unauthorized();
 #pragma warning disable EF1000 // Possible SQL injection vulnerability. (Its not possible as its using the property names of the tables)
@@ -56,6 +58,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(void), (int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> ClearAllWithKey([FromServices] IConfiguration config, [FromServices] ApplicationDatabaseContext dbContext, [FromQuery] string managementKey, [FromQuery] string apiKey)
         {
+            // On Azure App Service: this will use the key from App Service -> Application Settings -> Application settings
+            // In Development: this will use the key from appsettings.development.json
             if (managementKey != config["MANAGEMENT_KEY"])
                 return Unauthorized();
             var items = await dbContext.TodoItems.Where(x => x.Key == apiKey).Include(x => x.Tasks).FirstOrDefaultAsync();
