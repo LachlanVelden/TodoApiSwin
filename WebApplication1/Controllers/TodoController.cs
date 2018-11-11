@@ -123,12 +123,11 @@ namespace WebApplication1.Controllers
         {
             // Validation
             // - Null Checks
-            if(!string.IsNullOrWhiteSpace(task.Task)) return BadRequest();
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
             if (id == default(Guid)) return NotFound();
 
             // - Length Checks
-            if (task.Task.Length > 256) return BadRequest();
+            if (!string.IsNullOrWhiteSpace(task.Task) && task.Task.Length > 256) return BadRequest();
             if (apiKey.Length > 128) return BadRequest();
             
             // Find the TodoItem
