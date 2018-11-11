@@ -91,7 +91,7 @@ namespace WebApplication1.Controllers
         {
             // Validation
             // - Null Checks
-            if (!string.IsNullOrWhiteSpace(task.Task)) return BadRequest();
+            if (string.IsNullOrWhiteSpace(task.Task)) return BadRequest();
             if (string.IsNullOrWhiteSpace(apiKey)) return BadRequest();
 
             // - Length Checks
