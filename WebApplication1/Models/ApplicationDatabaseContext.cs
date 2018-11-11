@@ -17,6 +17,10 @@ namespace WebApplication1.Models
         /// A List of Key Binded TodoItems 
         /// </summary>
         public DbSet<TodoItemKeyContainer> TodoItems { get; set; }
+        /// <summary>
+        /// The entire collection of TodoItems
+        /// </summary>
+        public DbSet<TodoItem> TodoItem { get; set; }
 
     }
 }
